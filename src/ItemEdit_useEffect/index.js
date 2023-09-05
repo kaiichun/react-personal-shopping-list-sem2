@@ -1,72 +1,76 @@
+import { useState, useEffect } from "react";
+import axios from "axios";
 import {
   Container,
   Title,
   Space,
   Card,
   TextInput,
-  Divider,
   NumberInput,
+  Divider,
   Button,
   Group,
 } from "@mantine/core";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
-import { useState } from "react";
-import axios from "axios";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
 
-const addItem = async (data) => {
-  const response = await axios({
-    method: "POST",
-    url: "http://localhost:9999/items",
-    headers: { "Content-Type": "application/json" },
-    data: data,
-  });
-  return response.data;
-};
-
-function ItemAdd() {
+function ItemEdit1() {
+  const { id } = useParams();
   const navigate = useNavigate();
   const [name, setName] = useState("");
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
-  const [priority, setPriority] = useState("");
+  const [priority, setpPriority] = useState("");
 
-  const createMutation = useMutation({
-    mutationFn: addItem,
-    onSuccess: () => {
-      notifications.show({
-        title: "Item Added",
-        color: "green",
+  useEffect(() => {
+    axios
+      .get("http://localhost:9999/items/" + id)
+      .then((response) => {
+        // set value for every fields
+        setName(response.data.name);
+        setQuantity(response.data.quantity);
+        setUnit(response.data.unit);
+        setpPriority(response.data.priority);
+      })
+      .catch((error) => {
+        notifications.show({
+          title: error.response.data.message,
+          color: "red",
+        });
       });
+  }, []);
 
+  const handleUpdateItem = async (event) => {
+    event.preventDefault();
+    try {
+      const response = await axios({
+        method: "PUT",
+        url: "http://localhost:9999/items" + id,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        data: JSON.stringify({
+          name: name,
+          quantity: quantity,
+          priority: priority,
+          unit: unit,
+        }),
+      });
+      // redirect back to home page
       navigate("/");
-    },
-    onError: (error) => {
+    } catch (error) {
       notifications.show({
-        title: error.response.data.message,
+        name: error.response.data.message,
         color: "red",
       });
-    },
-  });
-
-  const handleAddNewItem = async (event) => {
-    event.preventDefault();
-    createMutation.mutate(
-      JSON.stringify({
-        name: name,
-        quantity: quantity,
-        unit: unit,
-        priority: priority,
-      })
-    );
+    }
   };
 
   return (
     <Container>
       <Space h="50px" />
       <Title order={2} align="center">
-        Add New Item
+        Edit Item
       </Title>
       <Space h="50px" />
       <Card withBorder shadow="md" p="20px">
@@ -96,7 +100,7 @@ function ItemAdd() {
           value={unit}
           placeholder="Enter the unit here"
           label="Unit"
-          description="What is the unit"
+          description="What is the uint"
           withAsterisk
           onChange={(event) => setUnit(event.target.value)}
         />
@@ -109,11 +113,11 @@ function ItemAdd() {
           label="Priority"
           description="What is priority?"
           withAsterisk
-          onChange={(event) => setPriority(event.target.value)}
+          onChange={(event) => setpPriority(event.target.value)}
         />
         <Space h="20px" />
-        <Button fullWidth onClick={handleAddNewItem}>
-          Add New Item
+        <Button fullWidth onClick={handleUpdateItem}>
+          Update List
         </Button>
       </Card>
       <Space h="50px" />
@@ -126,5 +130,4 @@ function ItemAdd() {
     </Container>
   );
 }
-
-export default ItemAdd;
+export default ItemEdit1;

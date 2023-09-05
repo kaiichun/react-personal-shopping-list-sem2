@@ -1,163 +1,142 @@
-import { useState, useEffect } from "react";
-import { Table } from "@mantine/core";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Title, Grid, Group, Space, Button } from "@mantine/core";
+import { Title, Grid, Card, Badge, Group, Space, Button } from "@mantine/core";
+import { Table } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+const fetchItems = async (priority = "", purchased = "") => {
+  const response = await axios.get(
+    "http://localhost:9999/items?" +
+      (priority !== "" ? "priority=" + priority : "") +
+      (purchased !== "" ? "&purchased=" + purchased : "")
+  );
+  return response.data;
+};
+
+const updataPurchasedItem = async (item_id = "") => {
+  const response = await axios({
+    method: "PUT",
+    url: "http://localhost:9999/items/" + item_id + "/purchased",
+    // purchased: true,
+  });
+  return response.data;
+};
+
+const unupdataPurchasedItem = async (item_id = "") => {
+  const response = await axios({
+    method: "PUT",
+    url: "http://localhost:9999/items/" + item_id + "/purchased",
+    purchased: false,
+  });
+  return response.data;
+};
+
+const deleteItem = async (item_id = "") => {
+  const response = await axios({
+    method: "DELETE",
+    url: "http://localhost:9999/items/" + item_id,
+  });
+  return response.data;
+};
 
 function Items() {
   const navigate = useNavigate();
-  const [items, setItems] = useState([]);
-  useEffect(() => {
-    axios
-      .get("http://localhost:9999/items")
-      .then((response) => {
-        setItems(response.data);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-  }, []);
+  const queryClient = useQueryClient();
+  //   const [items, setItems] = useState([]);
+  const [priority, setPriority] = useState("");
+  const [purchased, setPurchased] = useState("");
+  const {
+    isLoading,
+    isError,
+    data: items,
+    error,
+  } = useQuery({
+    queryKey: ["items", priority, purchased],
+    queryFn: () => fetchItems(priority, purchased),
+  });
 
-  const handlePurchasedUpdate = async (item_id) => {
-    try {
-      await axios.put(`http://localhost:9999/items/${item_id}`, {
-        purchased: true,
+  const memoryItems = queryClient.getQueryData(["items", "", ""]);
+  const priorityOptions = useMemo(() => {
+    let options = [];
+    if (memoryItems && memoryItems.length > 0) {
+      memoryItems.forEach((item) => {
+        if (!options.includes(item.priority)) {
+          options.push(item.priority);
+        }
       });
+    }
+    return options;
+  }, [memoryItems]);
 
+  const deleteMutation = useMutation({
+    mutationFn: deleteItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["items", priority, purchased],
+      });
       notifications.show({
-        title: "List Purchased Update",
+        title: "Shopping List Deleted",
         color: "green",
       });
+    },
+  });
 
-      const updatedPurchased = items.filter((i) => i._id !== item_id);
-      setItems(updatedPurchased);
-    } catch (error) {
-      notifications.show({
-        title: error.response.data.message,
-        color: "red",
+  const unupdateMutation = useMutation({
+    mutationFn: unupdataPurchasedItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["items", priority, purchased],
       });
-    }
-  };
-
-  const handleUnpurchasedUpdate = async (item_id) => {
-    try {
-      await axios.put(`http://localhost:9999/items/${item_id}`, {
-        purchased: false,
-      });
-
       notifications.show({
-        title: "List Purchased Update",
+        title: "purchased update",
         color: "green",
       });
+    },
+  });
 
-      const updatedPurchased = items.filter((i) => i._id !== item_id);
-      setItems(updatedPurchased);
-    } catch (error) {
-      notifications.show({
-        title: error.response.data.message,
-        color: "red",
+  const updateMutation = useMutation({
+    mutationFn: updataPurchasedItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["items", priority, purchased],
       });
-    }
-  };
-
-  const filterPurchased = async (purchased = "") => {
-    try {
-      const response = await axios.get(
-        "http://localhost:9999/items?purchased=" + purchased
-      );
-      setItems(response.data);
-    } catch (error) {
       notifications.show({
-        title: error.response.data.message,
-        color: "red",
-      });
-    }
-  };
-
-  const filterPriority = async (priority = "") => {
-    try {
-      const response = await axios.get(
-        "http://localhost:9999/items?priority=" + priority
-      );
-      setItems(response.data);
-    } catch (error) {
-      notifications.show({
-        title: error.response.data.message,
-        color: "red",
-      });
-    }
-  };
-
-  const handleItemDelete = async (item_id) => {
-    try {
-      // trigger API to delete from database
-      await axios({
-        method: "DELETE",
-        url: "http://localhost:9999/items/" + item_id,
-      });
-      // method 1 (modify the state) - filter out the deleted movie
-      notifications.show({
-        title: "List Deleted",
+        title: "purchased update",
         color: "green",
       });
-      const newItems = items.filter((i) => i._id !== item_id);
-      setItems(newItems);
-    } catch (error) {
-      notifications.show({
-        title: error.response.data.message,
-        color: "red",
-      });
-    }
-  };
+    },
+  });
 
   return (
     <>
       <Space h="20px" />{" "}
       <Group position="center">
-        <Button
-          onClick={() => {
-            filterPurchased("");
+        <select
+          onChange={(event) => {
+            setPriority(event.target.value);
           }}
         >
-          All
-        </Button>
-        <Button
-          onClick={() => {
-            filterPriority("Low");
+          <option value="">All Priority</option>
+          {priorityOptions.map((priority) => {
+            return (
+              <option key={priority} value={priority}>
+                {priority}
+              </option>
+            );
+          })}
+        </select>
+        <select
+          value={purchased}
+          onChange={(event) => {
+            setPurchased(event.target.value);
           }}
         >
-          Low
-        </Button>
-        <Button
-          onClick={() => {
-            filterPriority("Medium");
-          }}
-        >
-          Medium
-        </Button>
-        <Button
-          onClick={() => {
-            filterPriority("High");
-          }}
-        >
-          High
-        </Button>
-
-        <Button
-          onClick={() => {
-            filterPurchased("no");
-          }}
-        >
-          Unpurchased
-        </Button>
-        <Button
-          onClick={() => {
-            filterPurchased("yes");
-          }}
-        >
-          Purchased
-        </Button>
+          <option value="">All</option>
+          <option value="no">Purchased</option>
+          <option value="yes">Unpurchased</option>
+        </select>
       </Group>
       <Space h="35px" />
       <Group position="apart">
@@ -205,7 +184,7 @@ function Items() {
                           size="xs"
                           radius="50px"
                           onClick={() => {
-                            handleUnpurchasedUpdate(item._id);
+                            updateMutation.mutate(item._id);
                           }}
                         >
                           Unpurchased
@@ -217,7 +196,7 @@ function Items() {
                           size="xs"
                           radius="50px"
                           onClick={() => {
-                            handlePurchasedUpdate(item._id);
+                            unupdateMutation.mutate(item._id);
                           }}
                         >
                           Purchased
@@ -240,7 +219,7 @@ function Items() {
                           size="xs"
                           radius="5px"
                           onClick={() => {
-                            handleItemDelete(item._id);
+                            deleteMutation.mutate(item._id);
                           }}
                         >
                           Delete
