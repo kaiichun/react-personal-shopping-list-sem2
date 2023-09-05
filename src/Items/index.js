@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Title, Grid, Card, Badge, Group, Space, Button } from "@mantine/core";
+import { Title, Grid, Group, Space, Button } from "@mantine/core";
 import { Table } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
