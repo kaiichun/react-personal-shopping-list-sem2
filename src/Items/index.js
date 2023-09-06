@@ -27,8 +27,8 @@ const updataPurchasedItem = async (item_id = "") => {
 const unupdataPurchasedItem = async (item_id = "") => {
   const response = await axios({
     method: "PUT",
-    url: "http://localhost:9999/items/" + item_id + "/purchased",
-    purchased: false,
+    url: "http://localhost:9999/items/" + item_id + "/unpurchased",
+    // purchased: false,
   });
   return response.data;
 };
@@ -90,8 +90,8 @@ function Items() {
         queryKey: ["items", priority, purchased],
       });
       notifications.show({
-        title: "purchased update",
-        color: "green",
+        title: "item purchased already",
+        color: "gray",
       });
     },
   });
@@ -103,8 +103,8 @@ function Items() {
         queryKey: ["items", priority, purchased],
       });
       notifications.show({
-        title: "purchased update",
-        color: "green",
+        title: "ITEM no yet purchased !!!",
+        color: "yellow",
       });
     },
   });
@@ -134,8 +134,8 @@ function Items() {
           }}
         >
           <option value="">All</option>
-          <option value="no">Purchased</option>
-          <option value="yes">Unpurchased</option>
+          <option value="true">Unpurchased</option>
+          <option value="false">Purchased</option>
         </select>
       </Group>
       <Space h="35px" />
@@ -184,7 +184,7 @@ function Items() {
                           size="xs"
                           radius="50px"
                           onClick={() => {
-                            updateMutation.mutate(item._id);
+                            unupdateMutation.mutate(item._id);
                           }}
                         >
                           Unpurchased
@@ -196,7 +196,7 @@ function Items() {
                           size="xs"
                           radius="50px"
                           onClick={() => {
-                            unupdateMutation.mutate(item._id);
+                            updateMutation.mutate(item._id);
                           }}
                         >
                           Purchased
