@@ -154,22 +154,22 @@ function Items() {
       </Group>
       <Space h="20px" />
       <Grid>
-        {items ? (
-          items.map((item) => {
-            return (
-              <Table>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Quantity</th>
-                    <th>Unit</th>
-                    <th>Priority</th>
-                    <th>Purchased</th>
-                    <th>
-                      <Group position="right">Actions</Group>
-                    </th>
-                  </tr>
-                </thead>
+        <Table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Quantity</th>
+              <th>Unit</th>
+              <th>Priority</th>
+              <th>Purchased</th>
+              <th>
+                <Group position="right">Actions</Group>
+              </th>
+            </tr>
+          </thead>{" "}
+          {items ? (
+            items.map((item) => {
+              return (
                 <tbody>
                   <tr key={item._id}>
                     <td>{item.name}</td>
@@ -228,15 +228,15 @@ function Items() {
                     </td>
                   </tr>
                 </tbody>
-              </Table>
-            );
-          })
-        ) : (
-          <Grid.Col className="mt-5">
-            <Space h="120px" />
-            <h1 className="text-center text-muted">No List yet .</h1>
-          </Grid.Col>
-        )}
+              );
+            })
+          ) : (
+            <Grid.Col className="mt-5">
+              <Space h="120px" />
+              <h1 className="text-center text-muted">No List yet .</h1>
+            </Grid.Col>
+          )}
+        </Table>
       </Grid>
     </>
   );
